@@ -38,6 +38,7 @@ classdef CachedNDArray < handle
             addParameter(p, 'type', 'double');
             addParameter(p, 'var_name', 'tmp');
             addParameter(p, 'path_cache', 'cache');
+            addParameter(p, 'work_path', '');
             addParameter(p, 'nchunks', 0);
             addParameter(p, 'ini_val', 0);
             addParameter(p, 'fcaching', -1);
@@ -46,12 +47,17 @@ classdef CachedNDArray < handle
             type = p.Results.type;
             var_name = p.Results.var_name;
             path_cache = p.Results.path_cache;
+            work_path = p.Results.work_path;
             nchunks = p.Results.nchunks;
             fcaching = p.Results.fcaching;
             fdiscrete = p.Results.fdiscreet;
             ini_val = p.Results.ini_val;
             
-            path_cache = correctpath(path_cache);
+            if isempty(work_path)
+                path_cache = correctpath(path_cache);
+            else
+                path_cache = correctpath(fullfile(work_path, path_cache));
+            end
             
             assert(sum(dims <= 0) == 0, ...
                 'Dimensions must be positive integers');
