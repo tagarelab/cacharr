@@ -21,8 +21,10 @@ classdef CachedNDArray < handle
     
     properties (GetAccess = 'public', SetAccess = 'private')
         window; % class SlidingWindow
+        windowSize; % Size of the window
         cached; % flag for caching or not (normal array)
-        nchunks = 0;
+        nchunks = 0;  
+        zeroPadding = 0;
     end
     
     methods
@@ -52,6 +54,13 @@ classdef CachedNDArray < handle
             fcaching = p.Results.fcaching;
             fdiscrete = p.Results.fdiscreet;
             ini_val = p.Results.ini_val;
+            
+            % If the input data is not a multiple of the number of chunks we need to zero pad the dimensions
+            if mod(dims(broken), nchunks) ~= 0
+                % Number of rows to add as zero padding
+                cnda.zeroPadding = (floor(dims(broken) / nchunks) + 1) * nchunks - dims(broken);
+                dims(broken) = dims(broken) + cnda.zeroPadding;
+            end
             
             if isempty(work_path)
                 path_cache = correctpath(path_cache);
@@ -105,6 +114,8 @@ classdef CachedNDArray < handle
                 coord = ones(size(dims));
                 cnda.window = SlidingWindow(coord, vol, broken, type, dims, path_cache, var_name, fdiscrete, ini_val);
                 
+                cnda.windowSize = cnda.window.volume(broken);            
+                
                 for i = 1:nchunks % for each chunk
                     fname = get_fname(path_cache, var_name, i);
                     fid = fopen(fname, 'Wb');
@@ -128,6 +139,10 @@ classdef CachedNDArray < handle
         
         function dims = dimension(cnda)
             dims = cnda.window.dimension;
+            
+            % Subtract out the zero padding so the user knows the correct data dimensions
+            dims(cnda.window.ibroken) = cnda.window.dimension(cnda.window.ibroken) - cnda.zeroPadding;
+            
         end
         
         function t = type(cnda)
