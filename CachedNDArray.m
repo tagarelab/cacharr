@@ -25,6 +25,7 @@ classdef CachedNDArray < handle
         cached; % flag for caching or not (normal array)
         nchunks = 0;  
         zeroPadding = 0;
+        nRows;
     end
     
     methods
@@ -48,8 +49,8 @@ classdef CachedNDArray < handle
             parse(p, dims, broken, varargin{:});
             type = p.Results.type;
             var_name = p.Results.var_name;
-            path_cache = p.Results.path_cache;
-            work_path = p.Results.work_path;
+            path_cache = char(p.Results.path_cache);
+            work_path = char(p.Results.work_path);
             nchunks = p.Results.nchunks;
             fcaching = p.Results.fcaching;
             fdiscrete = p.Results.fdiscreet;
@@ -112,7 +113,7 @@ classdef CachedNDArray < handle
                 vol = dims;
                 vol(broken) = ceil(dims(broken) / nchunks);
                 coord = ones(size(dims));
-                cnda.window = SlidingWindow(coord, vol, broken, type, dims, path_cache, var_name, fdiscrete, ini_val);
+                cnda.window = SlidingWindow(coord, vol, broken, type, dims, path_cache, var_name, fdiscrete, ini_val);                
                 
                 cnda.windowSize = cnda.window.volume(broken);            
                 
@@ -184,17 +185,17 @@ classdef CachedNDArray < handle
         function chunk = subsref(cnda, S)
             if (strcmp(S(1).type, '()') )
                 if (cnda.cached)
-                    %limits = S(1).subs;
+                    limits = S(1).subs;
                     % make sure chunk limits are within global dimension
-%                     for i = 1:size(limits,2)
-%                         if (strcmp(limits(i), ':'))
-%                             continue;
-%                         end
-%                         assert(limits{i}(end) <= cnda.window.dimension(i) && limits{i}(1) >= 1, ...
-%                             'Reference operator: out of range NDArray');
-%                     end
+                    for i = 1:size(limits,2)
+                        if (strcmp(limits(i), ':'))
+                            continue;
+                        end
+                        assert(limits{i}(end) <= cnda.window.dimension(i) && limits{i}(1) >= 1, ...
+                            'Reference operator: out of range NDArray');
+                    end
                     S = cnda.window.read(S);
-                    %chunk = builtin('subsref', cnda.window.data, S);
+                    chunk = builtin('subsref', cnda.window.data, S);
                 end
                 chunk = builtin('subsref', cnda.window.data, S);
                 %end
